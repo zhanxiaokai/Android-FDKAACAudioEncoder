@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">FDKAACAudioEncoder</string>
+    <string name="title">FDKAAC Audio Encoder!</string>
+    <string name="encode">Encode</string>
+    <string name="action_settings">Settings</string>
+
+</resources>
