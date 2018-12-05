@@ -14,7 +14,7 @@ public class MainActivity extends Activity {
 	}
 	private Button encode_btn;
 
-	private String pcmFilePath = "/mnt/sdcard/vocal.pcm";
+	private String pcmFilePath = "/mnt/sdcard/1.pcm";
 	private String aacFilePath = "/mnt/sdcard/vocal_fdk.aac";
 
 	@Override
@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
 			public void onClick(View v) {
 				long startTimeMills = System.currentTimeMillis();
 				AudioEncoder audioEncoder = new AudioEncoder();
-				audioEncoder.encode(pcmFilePath, 2, 128 * 1024, 44100, aacFilePath);
+				audioEncoder.encode(pcmFilePath, 1, 128 * 1024, 48000, aacFilePath);
 				int wasteTimeMills = (int)(System.currentTimeMillis() - startTimeMills);
 				Log.i("success", "wasteTimeMills is : " + wasteTimeMills);
 			}

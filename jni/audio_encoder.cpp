@@ -10,6 +10,7 @@ AudioEncoder::~AudioEncoder() {
 
 int AudioEncoder::alloc_audio_stream(const char * codec_name) {
 	AVCodec *codec;
+	testFile = fopen("/mnt/sdcard/xiaokai.aac", "wb+");
 	AVSampleFormat preferedSampleFMT = AV_SAMPLE_FMT_S16;
 	int preferedChannels = audioChannels;
 	int preferedSampleRate = audioSampleRate;
@@ -27,7 +28,8 @@ int AudioEncoder::alloc_audio_stream(const char * codec_name) {
 	LOGI("audioChannels is %d", audioChannels);
 	avCodecContext->channel_layout = preferedChannels == 1 ? AV_CH_LAYOUT_MONO : AV_CH_LAYOUT_STEREO;
 	avCodecContext->channels = av_get_channel_layout_nb_channels(avCodecContext->channel_layout);
-	avCodecContext->profile = FF_PROFILE_AAC_LOW;
+	/** FF_PROFILE_AAC_LOW;FF_PROFILE_AAC_HE;FF_PROFILE_AAC_HE_V2 **/
+	avCodecContext->profile = FF_PROFILE_AAC_HE;
 	LOGI("avCodecContext->channels is %d", avCodecContext->channels);
 	avCodecContext->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
@@ -271,6 +273,7 @@ void AudioEncoder::encodePacket() {
 		return;
 	}
 	if (got_output) {
+		this->writeAACPakcetToFile(pkt.data, pkt.size);
 		if (avCodecContext->coded_frame && avCodecContext->coded_frame->pts != AV_NOPTS_VALUE)
 			pkt.pts = av_rescale_q(avCodecContext->coded_frame->pts, avCodecContext->time_base, audioStream->time_base);
 		pkt.flags |= AV_PKT_FLAG_KEY;
@@ -282,8 +285,37 @@ void AudioEncoder::encodePacket() {
 //	LOGI("leave encode packet...");
 }
 
+void AudioEncoder::addADTStoPacket(uint8_t* packet, int packetLen) {
+    int profile = 29;//2 : LC; 5 : HE-AAC; 29: HEV2
+    int freqIdx = 3; // 48KHz
+    int chanCfg = 1; // Mono
+
+    // fill in ADTS data
+    packet[0] = (unsigned char) 0xFF;
+    packet[1] = (unsigned char) 0xF1;
+    packet[2] = (unsigned char) 0x58;//(unsigned char) (((profile - 1) << 6) + (freqIdx << 2) + (chanCfg >> 2));
+    packet[3] = (unsigned char) (((chanCfg & 3) << 6) + (packetLen >> 11));
+    packet[4] = (unsigned char) ((packetLen & 0x7FF) >> 3);
+    packet[5] = (unsigned char) (((packetLen & 7) << 5) + 0x1F);
+    packet[6] = (unsigned char) 0xFC;
+}
+
+void AudioEncoder::writeAACPakcetToFile(uint8_t* data, int datalen) {
+    LOGI("After One Encode Size is : %d", datalen);
+    uint8_t* buffer = new uint8_t[datalen + 7];
+    memset(buffer, 0, datalen + 7);
+    memcpy(buffer + 7, data, datalen);
+    addADTStoPacket(buffer, datalen+7);
+    fwrite(buffer, sizeof(uint8_t), datalen+7, testFile);
+    delete[] buffer;
+}
+
+
 void AudioEncoder::destroy() {
 	LOGI("start destroy!!!");
+	if(testFile) {
+		fclose(testFile);
+	}
 	//这里需要判断是否删除resampler(重采样音频格式/声道/采样率等)相关的资源
 	if (NULL != swrBuffer) {
 		free(swrBuffer);

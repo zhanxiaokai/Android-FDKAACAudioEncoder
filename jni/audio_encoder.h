@@ -35,6 +35,8 @@ private:
 	bool isWriteHeaderSuccess;
 	double duration;
 
+	FILE* testFile;
+
 	AVFrame *input_frame;
 	int buffer_size;
 	uint8_t *samples;
@@ -57,6 +59,8 @@ private:
 	int alloc_audio_stream(const char * codec_name);
 	//当够了一个frame之后就要编码一个packet
 	void encodePacket();
+    void addADTStoPacket(uint8_t* packet, int packetLen);
+    void writeAACPakcetToFile(uint8_t* data, int datalen);
 
 public:
 	AudioEncoder();
